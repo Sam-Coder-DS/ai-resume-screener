@@ -513,6 +513,65 @@
       white-space: pre-wrap;
       word-break: break-word;
     }
+    .result-text, .questions-text, .ats-text, .skill-gap-text, .roadmap-text {
+    font-family: 'Epilogue', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.9;
+    color: var(--text2);
+  }
+
+  .result-text h1, .result-text h2, .result-text h3,
+  .questions-text h1, .questions-text h2, .questions-text h3,
+  .ats-text h1, .ats-text h2, .ats-text h3,
+  .skill-gap-text h1, .skill-gap-text h2, .skill-gap-text h3,
+  .roadmap-text h1, .roadmap-text h2, .roadmap-text h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 16px 0 8px;
+  }
+
+  .result-text p, .questions-text p, .ats-text p,
+  .skill-gap-text p, .roadmap-text p {
+    margin-bottom: 10px;
+  }
+
+  .result-text ul, .questions-text ul, .ats-text ul,
+  .skill-gap-text ul, .roadmap-text ul,
+  .result-text ol, .questions-text ol, .ats-text ol,
+  .skill-gap-text ol, .roadmap-text ol {
+    padding-left: 20px;
+    margin-bottom: 10px;
+  }
+
+  .result-text li, .questions-text li, .ats-text li,
+  .skill-gap-text li, .roadmap-text li {
+    margin-bottom: 6px;
+  }
+
+  .result-text table, .skill-gap-text table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+
+  .result-text th, .skill-gap-text th {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border2);
+    color: var(--text3);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .result-text td, .skill-gap-text td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+  }
     .btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
     .btn-acid { background: var(--acid); color: #0a0a0a; }
     .btn-acid:hover { box-shadow: var(--glow-acid); transform: translateY(-1px); }
@@ -582,26 +641,26 @@
         <div class="card-score-pill" id="pill-{{ loop.index }}">--/10</div>
       </div>
       <div class="result-body" id="section-analysis-{{ loop.index }}">
-        <pre class="result-text" id="text-{{ loop.index }}">{{ item.result }}</pre>
+        <div class="result-text" id="text-{{ loop.index }}">{{ item.result | safe }}</div>
       </div>
       <div class="questions-section" id="section-questions-{{ loop.index }}">
         <div class="questions-label">Interview Questions</div>
-        <pre class="questions-text">{{item.questions}}</pre>
+        <div class="questions-text">{{ item.questions | safe }}</div>
       </div>
       <div class="ats-section" id="section-ats-{{ loop.index }}">
         <div class="ats-label">ATS Analysis</div>
-          <pre class="ats-text">{{ item.ats }}</pre>
+          <div class="ats-text">{{ item.ats | safe }}</div>
       </div>
       <div class="skill-gap-section" id="section-skillgap-{{ loop.index }}">
         <div class="skill-gap-label">Skill Gap Analysis</div>
-        <pre class="skill-gap-text">{{ item.skill_gap }}</pre>
+        <div class="skill-gap-text">{{ item.skill_gap | safe }}</div>
       </div>
       <div class="roadmap-section" id="section-roadmap-{{ loop.index }}">
         <div class="roadmap-label">Career Roadmap</div>
         <div class="roadmap-disclaimer">
           AI-generated suggestions only. Choose paths that align with your personal interests and goals.
         </div>
-        <pre class="roadmap-text">{{ item.career_roadmap }}</pre>
+        <div class="roadmap-text">{{ item.career_roadmap | safe }}</div>
       </div>
       <div class="card-actions">
         <button class="tool-btn" onclick="copyText({{ loop.index }}, this)">Copy</button>
