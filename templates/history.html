@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Screening History</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&family=Epilogue:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface2: #161616;
+      --border: #222222;
+      --border2: #2a2a2a;
+      --acid: #b8ff57;
+      --text: #f0ede8;
+      --text2: #888880;
+      --text3: #444440;
+      --glow-acid: 0 0 24px rgba(184,255,87,0.2);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, #222 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.5;
+    }
+
+    .scan-line {
+      position: fixed;
+      left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--acid), transparent);
+      animation: scanMove 8s linear infinite;
+      opacity: 0.06;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    @keyframes scanMove { 0% { top: -1px; } 100% { top: 100vh; } }
+
+    .page-wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 56px 40px 80px;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 56px;
+      opacity: 0;
+      animation: appear 0.5s ease 0.05s forwards;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .nav-dot {
+      width: 7px; height: 7px;
+      background: var(--acid);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--acid);
+    }
+
+    .nav-name {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text2);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text3);
+      text-decoration: none;
+      border: 1px solid var(--border2);
+      padding: 9px 16px;
+      border-radius: 3px;
+      transition: all 0.2s ease;
+    }
+
+    .back-link:hover { color: var(--text2); background: var(--surface); }
+    .back-link svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    .page-title {
+      margin-bottom: 40px;
+      opacity: 0;
+      animation: appear 0.6s ease 0.15s forwards;
+    }
+
+    .eyebrow {
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--acid);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(36px, 5vw, 52px);
+      font-weight: 700;
+      line-height: 1.05;
+      color: var(--text);
+    }
+
+    h1 em { font-style: italic; font-weight: 400; color: var(--text2); }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 80px 40px;
+      border: 1px dashed var(--border2);
+      border-radius: 4px;
+      opacity: 0;
+      animation: appear 0.6s ease 0.3s forwards;
+    }
+
+    .empty-state p {
+      font-size: 12px;
+      color: var(--text3);
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+    }
+
+    /* History list */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .history-item {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(12px);
+      animation: slideUp 0.5s ease var(--delay) forwards;
+    }
+
+    .item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      user-select: none;
+    }
+
+    .item-header:hover { background: var(--surface2); }
+
+    .item-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .item-index {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text3);
+      min-width: 28px;
+    }
+
+    .item-info { display: flex; flex-direction: column; gap: 4px; }
+
+    .item-filename {
+      font-size: 12px;
+      color: var(--text);
+      letter-spacing: 0.5px;
+    }
+
+    .item-timestamp {
+      font-size: 10px;
+      color: var(--text3);
+      letter-spacing: 1px;
+    }
+
+    .item-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .item-score {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--acid);
+    }
+
+    .item-score.na { color: var(--text3); font-size: 13px; font-family: 'IBM Plex Mono', monospace; }
+
+    .chevron {
+      width: 16px; height: 16px;
+      stroke: var(--text3);
+      fill: none;
+      stroke-width: 2;
+      transition: transform 0.3s ease;
+    }
+
+    .item-header.open .chevron { transform: rotate(180deg); }
+
+    .item-body {
+      display: none;
+      border-top: 1px solid var(--border);
+      padding: 24px;
+    }
+
+    .item-body.open { display: block; }
+
+    .item-body pre {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 300;
+      line-height: 2;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .tool-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text3);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tool-btn:hover { color: var(--text2); border-color: var(--border2); }
+    .tool-btn.danger:hover { color: #ff3d3d; border-color: rgba(255,61,61,0.3); }
+    .tool-btn.success { color: var(--acid); border-color: rgba(184,255,87,0.3); }
+
+    /* Bottom action */
+    .bottom-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 32px;
+      opacity: 0;
+      animation: appear 0.6s ease 0.6s forwards;
+    }
+
+    .btn {
+      padding: 13px 24px;
+      font-family: 'Epilogue', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn-acid { background: var(--acid); border: none; color: #0a0a0a; }
+    .btn-acid:hover { box-shadow: var(--glow-acid); transform: translateY(-1px); }
+    .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text2); }
+    .btn-ghost:hover { background: var(--surface); color: var(--text); }
+
+    @keyframes appear { to { opacity: 1; } }
+    @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div class="scan-line"></div>
+
+  <div class="page-wrap">
+    <nav>
+      <a href="/" class="nav-logo">
+        <div class="nav-dot"></div>
+        <div class="nav-name">Resume Screener</div>
+      </a>
+      <a href="/" class="back-link">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        New Screen
+      </a>
+    </nav>
+
+    <div class="page-title">
+      <div class="eyebrow">Past Screenings</div>
+      <h1>Screening <em>History</em></h1>
+    </div>
+
+    {% if history %}
+    <div class="history-list">
+      {% for item in history|reverse %}
+      <div class="history-item" style="--delay: {{ 0.2 + loop.index * 0.07 }}s">
+        <div class="item-header" onclick="toggle(this)">
+          <div class="item-left">
+            <div class="item-index">{{ history|length - loop.index + 1 }}</div>
+            <div class="item-info">
+              <div class="item-filename">{{ item.filename }}</div>
+              <div class="item-timestamp">{{ item.timestamp }}</div>
+            </div>
+          </div>
+          <div class="item-right">
+            <div class="item-score" id="score-{{ loop.index }}">--</div>
+            <svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div class="item-body" id="body-{{ loop.index }}">
+          <pre id="text-{{ loop.index }}">{{ item.result }}</pre>
+          <div class="item-actions">
+            <button class="tool-btn" onclick="copyItem({{ loop.index }}, this)">Copy</button>
+            <button class="tool-btn" onclick="downloadItem({{ loop.index }}, '{{ item.filename }}')">Download</button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="bottom-row">
+      <button class="btn btn-ghost" onclick="clearHistory()">Clear History</button>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+      <p>No screenings yet. Run your first analysis to see history here.</p>
+      <a href="/" class="btn btn-acid">Start Screening</a>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <script>
+    // Extract scores
+    document.querySelectorAll('[id^="text-"]').forEach(el => {
+      const idx = el.id.split('-')[1];
+      const match = el.innerText.match(/(\d+)\s*\/\s*10/);
+      const scoreEl = document.getElementById('score-' + idx);
+      if (match) {
+        scoreEl.textContent = match[1] + '/10';
+      } else {
+        scoreEl.textContent = 'N/A';
+        scoreEl.classList.add('na');
+      }
+    });
+
+    // Toggle expand/collapse
+    function toggle(header) {
+      const idx = header.parentElement.querySelector('[id^="body-"]').id.split('-')[1];
+      const body = document.getElementById('body-' + idx);
+      header.classList.toggle('open');
+      body.classList.toggle('open');
+    }
+
+    // Copy
+    function copyItem(idx, btn) {
+      navigator.clipboard.writeText(document.getElementById('text-' + idx).innerText).then(() => {
+        btn.textContent = 'Copied';
+        btn.classList.add('success');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('success'); }, 2000);
+      });
+    }
+
+    // Download
+    function downloadItem(idx, filename) {
+      const text = document.getElementById('text-' + idx).innerText;
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename.replace(/\.[^.]+$/, '') + '-report.txt';
+      a.click();
+    }
+
+    // Clear history
+    function clearHistory() {
+      if (confirm('Clear all screening history?')) {
+        fetch('/clear_history', { method: 'POST' })
+          .then(() => location.reload());
+      }
+    }
+  </script>
+</body>
+</html>

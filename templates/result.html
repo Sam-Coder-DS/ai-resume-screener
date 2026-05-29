@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Screening Result</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&family=Epilogue:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface2: #161616;
+      --border: #222222;
+      --border2: #2a2a2a;
+      --acid: #b8ff57;
+      --red: #ff3d3d;
+      --amber: #ffb347;
+      --text: #f0ede8;
+      --text2: #888880;
+      --text3: #444440;
+      --glow-acid: 0 0 24px rgba(184,255,87,0.2);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, #222 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.5;
+    }
+
+    .scan-line {
+      position: fixed;
+      left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, var(--acid) 40%, var(--acid) 60%, transparent 100%);
+      animation: scanMove 8s linear infinite;
+      opacity: 0.06;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    @keyframes scanMove { 0% { top: -1px; } 100% { top: 100vh; } }
+
+    .page-wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 56px 40px 80px;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 56px;
+      opacity: 0;
+      animation: appear 0.5s ease 0.05s forwards;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .nav-dot {
+      width: 7px; height: 7px;
+      background: var(--acid);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--acid);
+    }
+
+    .nav-name {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text2);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text3);
+      text-decoration: none;
+      border: 1px solid var(--border2);
+      padding: 9px 16px;
+      border-radius: 3px;
+      transition: all 0.2s ease;
+    }
+
+    .back-link:hover { color: var(--text2); background: var(--surface); }
+    .back-link svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    /* Page title */
+    .page-title {
+      margin-bottom: 40px;
+      opacity: 0;
+      animation: appear 0.6s ease 0.15s forwards;
+    }
+
+    .eyebrow {
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--acid);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(36px, 5vw, 56px);
+      font-weight: 700;
+      line-height: 1.05;
+      color: var(--text);
+    }
+
+    h1 em { font-style: italic; font-weight: 400; color: var(--text2); }
+
+    /* RANKING TABLE — shown only for multiple resumes */
+    .ranking-section {
+      margin-bottom: 40px;
+      opacity: 0;
+      animation: slideUp 0.6s ease 0.2s forwards;
+    }
+
+    .section-label {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 16px;
+    }
+
+    .ranking-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .ranking-table th {
+      background: var(--surface2);
+      padding: 12px 20px;
+      text-align: left;
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text3);
+      font-weight: 400;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .ranking-table td {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text2);
+      background: var(--surface);
+    }
+
+    .ranking-table tr:last-child td { border-bottom: none; }
+
+    .ranking-table tr:first-child td { color: var(--text); }
+
+    .rank-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text3);
+    }
+
+    .rank-1 .rank-num { color: var(--acid); }
+    .rank-2 .rank-num { color: var(--text2); }
+    .rank-3 .rank-num { color: var(--amber); }
+
+    .rank-score {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .rank-1 .rank-score { color: var(--acid); }
+
+    .rank-bar-wrap {
+      width: 120px;
+      background: var(--border);
+      border-radius: 2px;
+      height: 3px;
+      overflow: hidden;
+    }
+
+    .rank-bar {
+      height: 100%;
+      background: linear-gradient(90deg, rgba(184,255,87,0.4), var(--acid));
+      border-radius: 2px;
+      transition: width 1.2s cubic-bezier(0.16,1,0.3,1) 0.5s;
+    }
+
+    .jump-btn {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text3);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 5px 10px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'IBM Plex Mono', monospace;
+      text-decoration: none;
+    }
+
+    .jump-btn:hover { color: var(--acid); border-color: rgba(184,255,87,0.3); }
+
+    /* Result cards */
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 24px;
+      opacity: 0;
+      transform: translateY(16px);
+      animation: slideUp 0.6s ease var(--delay, 0.3s) forwards;
+    }
+
+    .result-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .card-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .card-rank-badge {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text3);
+      flex-shrink: 0;
+    }
+
+    .rank-badge-1 { border-color: rgba(184,255,87,0.4); color: var(--acid); box-shadow: 0 0 10px rgba(184,255,87,0.15); }
+    .rank-badge-2 { border-color: var(--border2); color: var(--text2); }
+    .rank-badge-3 { border-color: rgba(255,179,71,0.3); color: var(--amber); }
+
+    .card-filename {
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: var(--text2);
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .card-score-pill {
+      font-family: 'Playfair Display', serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--acid);
+      background: rgba(184,255,87,0.06);
+      border: 1px solid rgba(184,255,87,0.15);
+      padding: 4px 14px;
+      border-radius: 20px;
+    }
+
+    .result-body {
+      padding: 28px 24px;
+    }
+
+    .result-body pre {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 300;
+      line-height: 2.1;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+      letter-spacing: 0.2px;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      padding: 0 24px 20px;
+    }
+
+    .tool-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text3);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tool-btn:hover { color: var(--text2); border-color: var(--border2); background: var(--surface2); }
+    .tool-btn.success { color: var(--acid); border-color: rgba(184,255,87,0.3); }
+
+    /* Bottom action row */
+    .action-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 32px;
+      opacity: 0;
+      animation: appear 0.6s ease 0.8s forwards;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 15px 20px;
+      font-family: 'Epilogue', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-decoration: none;
+      text-align: center;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+    }
+    .questions-section {
+      border-top: 1px solid var(--border);
+      padding: 24px;
+      background: rgba(184,255,87,0.02);
+    }
+
+    .questions-label {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--acid);
+      margin-bottom: 16px;
+    }
+
+    .questions-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 300;
+      line-height: 2;
+      color: var(--text2);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .ats-section {
+      border-top: 1px solid var(--border);
+      padding: 24px;
+      background: rgba(77,159,255,0.02);
+    }
+
+    .ats-label {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 16px;
+    }
+
+    .ats-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 300;
+      line-height: 2;
+      color: var(--text2);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .skill-gap-section {
+      border-top: 1px solid var(--border);
+      padding: 24px;
+      background: rgba(255,179,71,0.02);
+    }
+
+    .skill-gap-label {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 16px;
+    }
+
+    .skill-gap-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 300;
+      line-height: 2;
+      color: var(--text2);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .toc {
+      position: sticky;
+      top: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      padding: 20px;
+      margin-bottom: 32px;
+      opacity: 0;
+      animation: appear 0.6s ease 0.2s forwards;
+    }
+
+    .toc-label {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 12px;
+    }
+
+    .toc-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .toc-link {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text3);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 2px;
+      transition: all 0.2s ease;
+    }
+
+    .toc-link:hover {
+      color: var(--acid);
+      border-color: rgba(184,255,87,0.3);
+    }
+    .roadmap-section {
+      border-top: 1px solid var(--border);
+      padding: 24px;
+      background: rgba(255,61,61,0.02);
+    }
+
+    .roadmap-label {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 10px;
+    }
+
+    .roadmap-disclaimer {
+      font-size: 11px;
+      color: var(--text3);
+      border-left: 2px solid var(--red);
+      padding-left: 12px;
+      margin-bottom: 16px;
+      font-family: 'Epilogue', sans-serif;
+      line-height: 1.6;
+    }
+
+    .roadmap-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 300;
+      line-height: 2;
+      color: var(--text2);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .btn-acid { background: var(--acid); color: #0a0a0a; }
+    .btn-acid:hover { box-shadow: var(--glow-acid); transform: translateY(-1px); }
+    .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text2); }
+    .btn-ghost:hover { background: var(--surface); color: var(--text); }
+
+    @keyframes appear { to { opacity: 1; } }
+    @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div class="scan-line"></div>
+
+  <div class="page-wrap">
+
+    <nav>
+      <a href="/" class="nav-logo">
+        <div class="nav-dot"></div>
+        <div class="nav-name">Resume Screener</div>
+      </a>
+      <a href="/history" class="back-link">History</a>
+      <a href="/" class="back-link">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        New Screen
+      </a>
+    </nav>
+
+    <div class="page-title">
+      <div class="eyebrow">Analysis Complete — {{ results|length }} Resume{{ 's' if results|length > 1 }}</div>
+      <h1>Screening <em>Result{{ 's' if results|length > 1 }}</em></h1>
+    </div>
+
+    <!-- RANKING TABLE: only show if more than 1 resume -->
+    {% if results|length > 1 %}
+    <div class="ranking-section">
+      <div class="section-label">Candidate Ranking</div>
+      <table class="ranking-table" id="rankingTable">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Candidate</th>
+            <th>Fit Score</th>
+            <th>Bar</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="rankingBody">
+          <!-- filled by JS -->
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+    <div class="toc" id="toc">
+      <div class="toc-label">Contents</div>
+      <div class="toc-links" id="tocLinks">
+        <!-- filled by JS -->
+      </div>
+    </div>
+    <!-- RESULT CARDS -->
+    {% for item in results %}
+    <div class="result-card" id="card-{{ loop.index }}" style="--delay: {{ 0.25 + loop.index * 0.1 }}s">
+      <div class="result-card-header">
+        <div class="card-header-left">
+          <div class="card-rank-badge rank-badge-{{ loop.index }}" id="badge-{{ loop.index }}">{{ loop.index }}</div>
+          <div class="card-filename">{{ item.filename }}</div>
+        </div>
+        <div class="card-score-pill" id="pill-{{ loop.index }}">--/10</div>
+      </div>
+      <div class="result-body" id="section-analysis-{{ loop.index }}">
+        <pre class="result-text" id="text-{{ loop.index }}">{{ item.result }}</pre>
+      </div>
+      <div class="questions-section" id="section-questions-{{ loop.index }}">
+        <div class="questions-label">Interview Questions</div>
+        <pre class="questions-text">{{item.questions}}</pre>
+      </div>
+      <div class="ats-section" id="section-ats-{{ loop.index }}">
+        <div class="ats-label">ATS Analysis</div>
+          <pre class="ats-text">{{ item.ats }}</pre>
+      </div>
+      <div class="skill-gap-section" id="section-skillgap-{{ loop.index }}">
+        <div class="skill-gap-label">Skill Gap Analysis</div>
+        <pre class="skill-gap-text">{{ item.skill_gap }}</pre>
+      </div>
+      <div class="roadmap-section" id="section-roadmap-{{ loop.index }}">
+        <div class="roadmap-label">Career Roadmap</div>
+        <div class="roadmap-disclaimer">
+          AI-generated suggestions only. Choose paths that align with your personal interests and goals.
+        </div>
+        <pre class="roadmap-text">{{ item.career_roadmap }}</pre>
+      </div>
+      <div class="card-actions">
+        <button class="tool-btn" onclick="copyText({{ loop.index }}, this)">Copy</button>
+        <button class="tool-btn" onclick="downloadText({{ loop.index }}, '{{ item.filename }}')">Download</button>
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="action-row">
+      <a href="/" class="btn btn-acid">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Screen Again
+      </a>
+      <button class="btn btn-ghost" onclick="downloadAll()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download All
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    // Extract score from each result text
+    const cards = document.querySelectorAll('.result-text');
+    const scores = [];
+
+    cards.forEach((card, idx) => {
+      const text = card.innerText;
+      const match = text.match(/(\d+\.?\d*)\s*\/\s*10/);
+      const score = match ? parseFloat(match[1]) : 0;
+      scores.push({ index: idx + 1, score, filename: card.id });
+
+      // Update score pill
+      document.getElementById('pill-' + (idx + 1)).textContent = (match ? match[1] : 'N/A') + '/10';
+    });
+
+    // Build ranking table if multiple resumes
+    const rankingBody = document.getElementById('rankingBody');
+    if (rankingBody) {
+      const sorted = [...scores].sort((a, b) => b.score - a.score);
+
+      sorted.forEach((item, rank) => {
+        const filename = document.querySelector('#card-' + item.index + ' .card-filename').textContent;
+        const tr = document.createElement('tr');
+        tr.className = 'rank-' + (rank + 1);
+        tr.innerHTML = `
+          <td><div class="rank-num">${rank + 1}</div></td>
+          <td>${filename}</td>
+          <td><span class="rank-score">${item.score}/10</span></td>
+          <td>
+            <div class="rank-bar-wrap">
+              <div class="rank-bar" style="width: 0%" data-width="${item.score * 10}%"></div>
+            </div>
+          </td>
+          <td><a href="#card-${item.index}" class="jump-btn">View</a></td>
+        `;
+        rankingBody.appendChild(tr);
+      });
+
+      // Animate bars after render
+      setTimeout(() => {
+        document.querySelectorAll('.rank-bar').forEach(bar => {
+          bar.style.width = bar.dataset.width;
+        });
+      }, 300);
+    }
+
+    // Copy single card
+    function copyText(idx, btn) {
+      const text = document.getElementById('text-' + idx).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = 'Copied';
+        btn.classList.add('success');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('success'); }, 2000);
+      });
+    }
+
+    // Download single card
+    function downloadText(idx, filename) {
+      const text = document.getElementById('text-' + idx).innerText;
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename.replace(/\.[^.]+$/, '') + '-screening.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Download all
+    function downloadAll() {
+      let combined = '';
+      document.querySelectorAll('.result-text').forEach((el, i) => {
+        const fname = document.querySelectorAll('.card-filename')[i].textContent;
+        combined += `=== ${fname} ===\n\n${el.innerText}\n\n${'='.repeat(40)}\n\n`;
+      });
+      const blob = new Blob([combined], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'all-screening-reports.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    const tocLinks = document.getElementById('tocLinks');
+    document.querySelectorAll('.result-card').forEach((card, i) => {
+      const fname = card.querySelector('.card-filename').textContent;
+      const sections = [
+        { label: 'Analysis', id: 'section-analysis-' + (i+1) },
+        { label: 'Questions', id: 'section-questions-' + (i+1) },
+        { label: 'ATS', id: 'section-ats-' + (i+1) },
+        { label: 'Skill Gap', id: 'section-skillgap-' + (i+1) },
+        { label: 'Roadmap', id: 'section-roadmap-' + (i+1) },
+      ];
+      sections.forEach(s => {
+        const a = document.createElement('a');
+        a.href = '#' + s.id;
+        a.className = 'toc-link';
+        a.textContent = s.label;
+        tocLinks.appendChild(a);
+      });
+    });
+  </script>
+</body>
+</html>
