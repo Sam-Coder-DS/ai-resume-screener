@@ -124,8 +124,3 @@ Start command: `python app.py`
 
 ---
 
-## Background
-
-Built as a full-stack AI project to understand local LLM deployment, prompt engineering, and practical AI product development. The goal was to build something that solves a real problem — not a tutorial clone.
-
-The five-analysis structure (fit, ATS, skill gap, interview questions, career roadmap) mirrors how a senior recruiter would evaluate a candidate, broken down into discrete, actionable outputs.
